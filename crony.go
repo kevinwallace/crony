@@ -90,7 +90,8 @@ func executeEntry(entry crontab.Entry, repo *repo, now time.Time, stopTime chan 
 			now = time.Now()
 			next = entry.Schedule.Next(next)
 			if !now.Before(next) {
-				log.Printf("Command overran after %s: %s", start.Sub(now), entry.Command)
+				log.Printf("Command overran after %s: %s", now.Sub(start), entry.Command)
+				next = entry.Schedule.Next(now)
 			}
 		case t := <-stopTime:
 			stopTime <- t
