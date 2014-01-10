@@ -4,11 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os/exec"
 	"path"
 	"time"
 
+	"github.com/golang/glog"
 	"github.com/kevinwallace/crontab"
 )
 
@@ -21,8 +21,8 @@ var (
 func pullCrontab(repo *repo, crontabUpdates chan<- []crontab.Entry) error {
 	m := repo.master
 	if err := m.Pull(); err != nil {
-		log.Printf("couldn't pull; was origin's history rewritten?")
-		log.Printf("overwriting local head with origin's...")
+		glog.Warningf("couldn't pull %s; was origin's history rewritten?", repo.name)
+		glog.Warningf("overwriting local head with origin's...")
 		if err := m.FetchHead(); err != nil {
 			return err
 		}
@@ -35,7 +35,7 @@ func pullCrontab(repo *repo, crontabUpdates chan<- []crontab.Entry) error {
 	if err != nil {
 		return err
 	}
-	log.Printf("Got crontab:\n%s", string(contents))
+	glog.V(2).Infof("Got crontab:\n%s", string(contents))
 	crontabUpdates <- entries
 	return nil
 }
@@ -48,11 +48,11 @@ func watchCrontab(repo *repo) <-chan []crontab.Entry {
 		ticker := time.NewTicker(*pullFrequency)
 		defer ticker.Stop()
 		if err := pullCrontab(repo, crontabUpdates); err != nil {
-			log.Printf("error pulling crontab for %s: %s", repo.name, err)
+			glog.Errorf("error pulling crontab for %s: %s", repo.name, err)
 		}
 		for _ = range ticker.C {
 			if err := pullCrontab(repo, crontabUpdates); err != nil {
-				log.Printf("error pulling crontab for %s: %s", repo.name, err)
+				glog.Errorf("error pulling crontab for %s: %s", repo.name, err)
 			}
 		}
 	}()
@@ -90,7 +90,7 @@ func executeEntry(entry crontab.Entry, repo *repo, now time.Time, stopTime chan 
 			now = time.Now()
 			next = entry.Schedule.Next(next)
 			if !now.Before(next) {
-				log.Printf("Command overran after %s: %s", now.Sub(start), entry.Command)
+				glog.Errorf("Command overran after %s: %s", now.Sub(start), entry.Command)
 				next = entry.Schedule.Next(now)
 			}
 		case t := <-stopTime:
@@ -107,10 +107,10 @@ func executeEntry(entry crontab.Entry, repo *repo, now time.Time, stopTime chan 
 // Creates a new branch and workdir off of repo, then executes the given command in that workdir.
 // Commits and attempts to push the changes upstream.
 func executeCommand(command string, repo *repo) {
-	log.Printf("running: %s", command)
+	glog.Infof("running: %s", command)
 	w, err := repo.Branch()
 	if err != nil {
-		log.Printf("unable to create branch: %s", err)
+		glog.Errorf("unable to create branch: %s", err)
 		return
 	}
 	defer w.Close()
@@ -124,24 +124,24 @@ func executeCommand(command string, repo *repo) {
 	if err != nil {
 		commitMsg += "\n" + err.Error()
 		if err := ioutil.WriteFile(path.Join(w.dir, ".fail"), []byte(ts), 0700); err != nil {
-			log.Printf("unable to write to .fail: %s", err)
+			glog.Errorf("unable to write to .fail: %s", err)
 		}
 	}
 
 	if err := w.Commit(commitMsg); err != nil {
-		log.Printf("nothing to commit after running %s", command)
+		glog.Errorf("nothing to commit after running %s", command)
 	}
 
 	if err := repo.master.Merge(w); err != nil {
-		log.Printf("unable to merge temp branch into local master: %s", err)
+		glog.Errorf("unable to merge temp branch into local master: %s", err)
 		return
 	}
 
 	if err := repo.master.Push(); err != nil {
-		log.Printf("unable to push master: %s", err)
-		log.Printf("trying to overwrite local head with origin for future commits to be rebased on...")
+		glog.Errorf("unable to push master: %s", err)
+		glog.Errorf("trying to overwrite local head with origin for future commits to be rebased on...")
 		if err := repo.master.FetchHead(); err != nil {
-			log.Printf("error overwriting local head with origin: %s", err)
+			glog.Errorf("error overwriting local head with origin: %s", err)
 		}
 	}
 }
@@ -151,7 +151,7 @@ func main() {
 	for _, url := range flag.Args() {
 		r, err := NewClone(url, url)
 		if err != nil {
-			log.Fatalf("Error cloning %s: %s", url, err)
+			glog.Fatalf("Error cloning %s: %s", url, err)
 		}
 		defer r.Close()
 		crontabUpdates := watchCrontab(r)

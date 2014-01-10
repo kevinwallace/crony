@@ -3,13 +3,14 @@ package main
 import (
 	"fmt"
 	"io"
-	"log"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 	"sync"
+
+	"github.com/golang/glog"
 )
 
 func randomStr(alphabet string, n int) string {
@@ -139,10 +140,11 @@ type workdir struct {
 }
 
 func (w *workdir) git(args ...string) error {
-	log.Printf("%s$ git %s", w.branch, strings.Join(args, " "))
+	glog.V(3).Infof("%s$ git %s", w.branch, strings.Join(args, " "))
 	cmd := exec.Command("git", args...)
 	cmd.Dir = w.dir
 	output, err := cmd.CombinedOutput()
+	glog.V(4).Infof(string(output))
 	if err != nil {
 		return fmt.Errorf("%s\n%s", output, err)
 	}
