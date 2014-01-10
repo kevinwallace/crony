@@ -7,7 +7,7 @@ function list_external_packages() {
 }
 
 list_external_packages | while read package; do
-  if [ ! -d "vendor/${package}" ]; then
+  if [ ! -d "vendor/src/${package}" ]; then
     echo "${package}"
   fi
 done

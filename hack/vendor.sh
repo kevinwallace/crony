@@ -4,8 +4,8 @@ set -e
 cd "$(dirname "$0")/.."
 
 rm -fr vendor
-mkdir vendor
-cd vendor
+mkdir -p vendor/src
+cd vendor/src
 
 function get_path() {
   echo "${1#*://}"
