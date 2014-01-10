@@ -1,5 +1,6 @@
 crony
 =====
+[![Build Status](https://travis-ci.org/kevinwallace/crony.png?branch=master)](https://travis-ci.org/kevinwallace/crony)
 
 Crony runs cron-like tasks that modify a git repository.
 
