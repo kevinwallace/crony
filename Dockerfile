@@ -15,5 +15,9 @@ RUN go install github.com/kevinwallace/crony
 RUN useradd -m crony
 USER crony
 WORKDIR /home/crony
+ENV HOME /home/crony
 
-ENTRYPOINT ["crony"]
+RUN git config --global user.email crony@localhost
+RUN git config --global user.name Crony
+
+ENTRYPOINT ["crony", "-logtostderr"]
