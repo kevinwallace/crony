@@ -97,7 +97,7 @@ func executeEntry(entry crontab.Entry, repo *repo, now time.Time, stopTime chan 
 			if !t.Before(next) {
 				executeCommand(entry.Command, repo)
 			}
-			break
+			return
 		}
 	}
 }
