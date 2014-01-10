@@ -70,7 +70,7 @@ func executeCrontab(repo *repo, crontabUpdates <-chan []crontab.Entry) {
 			if stopTime != nil {
 				stopTime <- now
 			}
-			stopTime := make(chan time.Time, 1)
+			stopTime = make(chan time.Time, 1)
 			for _, entry := range entries {
 				go executeEntry(entry, repo, now, stopTime)
 			}
