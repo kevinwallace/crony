@@ -140,15 +140,20 @@ type workdir struct {
 }
 
 func (w *workdir) git(args ...string) error {
+	_, err := w.gitOutput(args...)
+	return err
+}
+
+func (w *workdir) gitOutput(args ...string) ([]byte, error) {
 	glog.V(3).Infof("%s$ git %s", w.branch, strings.Join(args, " "))
 	cmd := exec.Command("git", args...)
 	cmd.Dir = w.dir
 	output, err := cmd.CombinedOutput()
 	glog.V(4).Infof(string(output))
 	if err != nil {
-		return fmt.Errorf("%s\n%s", output, err)
+		return output, fmt.Errorf("%s\n%s", output, err)
 	}
-	return nil
+	return output, nil
 }
 
 // Pull latest changes from origin, and rebase any local changes on top of origin's head.
@@ -183,6 +188,15 @@ func (w *workdir) pull() error {
 		return err
 	}
 	return nil
+}
+
+// HasChanges determines whether this workdir has un-committed changes, staged or not.
+func (w *workdir) HasChanges() (bool, error) {
+	output, err := w.gitOutput("status", "-s")
+	if err != nil {
+		return false, err
+	}
+	return len(output) > 0, nil
 }
 
 func (w *workdir) Commit(msg string) error {

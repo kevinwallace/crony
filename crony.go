@@ -128,8 +128,19 @@ func executeCommand(command string, repo *repo) {
 		}
 	}
 
+	hasChanges, err := w.HasChanges()
+	if err != nil {
+		glog.Errorf("couldn't determine whether %s has changes: %s", w.branch, err)
+		return
+	}
+	if !hasChanges {
+		glog.Infof("nothing to commit after running: %s", command)
+		return
+	}
+
 	if err := w.Commit(commitMsg); err != nil {
-		glog.Errorf("nothing to commit after running %s", command)
+		glog.Errorf("unable to commit: %s", err)
+		return
 	}
 
 	if err := repo.master.Merge(w); err != nil {
@@ -144,6 +155,8 @@ func executeCommand(command string, repo *repo) {
 			glog.Errorf("error overwriting local head with origin: %s", err)
 		}
 	}
+
+	glog.Infof("committed changes: %s", command)
 }
 
 func main() {
