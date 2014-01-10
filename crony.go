@@ -35,6 +35,7 @@ func pullCrontab(repo *repo, crontabUpdates chan<- []crontab.Entry) error {
 	if err != nil {
 		return err
 	}
+	glog.Infof("crontab up-to-date")
 	glog.V(2).Infof("Got crontab:\n%s", string(contents))
 	crontabUpdates <- entries
 	return nil
@@ -90,7 +91,7 @@ func executeEntry(entry crontab.Entry, repo *repo, now time.Time, stopTime chan 
 			now = time.Now()
 			next = entry.Schedule.Next(next)
 			if !now.Before(next) {
-				glog.Errorf("Command overran after %s: %s", now.Sub(start), entry.Command)
+				glog.Errorf("command overran after %s: %s", now.Sub(start), entry.Command)
 				next = entry.Schedule.Next(now)
 			}
 		case t := <-stopTime:
@@ -164,7 +165,7 @@ func main() {
 	for _, url := range flag.Args() {
 		r, err := NewClone(url, url)
 		if err != nil {
-			glog.Fatalf("Error cloning %s: %s", url, err)
+			glog.Fatalf("error cloning %s: %s", url, err)
 		}
 		defer r.Close()
 		crontabUpdates := watchCrontab(r)
