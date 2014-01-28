@@ -176,7 +176,7 @@ func (w *workdir) FetchHead() error {
 	if err := w.git("reset", "--hard", "FETCH_HEAD"); err != nil {
 		return err
 	}
-	if err := w.git("reset", "-df"); err != nil {
+	if err := w.git("clean", "-df"); err != nil {
 		return err
 	}
 	return nil
